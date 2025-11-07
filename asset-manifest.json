@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/docker-react/static/css/main.f855e6bc.css",
+    "main.js": "/docker-react/static/js/main.d6de6ee0.js",
+    "static/js/453.d7446e4a.chunk.js": "/docker-react/static/js/453.d7446e4a.chunk.js",
+    "static/media/logo.svg": "/docker-react/static/media/logo.6ce24c58023cc2f8fd88fe9d219db6c6.svg",
+    "index.html": "/docker-react/index.html",
+    "main.f855e6bc.css.map": "/docker-react/static/css/main.f855e6bc.css.map",
+    "main.d6de6ee0.js.map": "/docker-react/static/js/main.d6de6ee0.js.map",
+    "453.d7446e4a.chunk.js.map": "/docker-react/static/js/453.d7446e4a.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f855e6bc.css",
+    "static/js/main.d6de6ee0.js"
+  ]
+}
