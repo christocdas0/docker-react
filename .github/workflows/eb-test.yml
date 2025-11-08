@@ -1,0 +1,84 @@
+name: Deploy to AWS Elastic Beanstalk (Testing)
+
+# Manual trigger only - for testing EB deployment
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-eb:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build application
+        run: npm run build
+
+      - name: Create deployment package
+        run: |
+          # Create a simple directory structure for EB
+          mkdir eb-package
+          cp -r build eb-package/
+          
+          # Create Procfile for EB (tells it how to run the app)
+          echo "web: npx serve -s build -l 8080" > eb-package/Procfile
+          
+          # Create package.json with serve dependency
+          cat > eb-package/package.json << 'EOF'
+          {
+            "name": "docker-react-eb",
+            "version": "1.0.0",
+            "scripts": {
+              "start": "serve -s build -p 8080"
+            },
+            "dependencies": {
+              "serve": "^14.2.0"
+            }
+          }
+          EOF
+          
+          # Zip it up
+          cd eb-package
+          zip -r ../deploy.zip .
+          cd ..
+
+      - name: Get timestamp
+        id: timestamp
+        run: echo "time=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_OUTPUT
+
+      - name: Deploy to EB
+        uses: einaregilsson/beanstalk-deploy@v22
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: ${{ secrets.EB_APPLICATION_NAME }}
+          environment_name: ${{ secrets.EB_ENVIRONMENT_NAME }}
+          region: ${{ secrets.AWS_REGION }}
+          version_label: "react-${{ steps.timestamp.outputs.time }}"
+          deployment_package: deploy.zip
+          wait_for_deployment: true
+          wait_for_environment_recovery: 300
+
+      - name: Deployment Success
+        if: success()
+        run: |
+          echo "✅ EB Deployment successful!"
+          echo "🌐 Check your EB environment in AWS Console"
+
+      - name: Deployment Failed
+        if: failure()
+        run: |
+          echo "❌ EB Deployment failed"
+          exit 1
