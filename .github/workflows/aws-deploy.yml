@@ -36,7 +36,7 @@ jobs:
 
       - name: Generate deployment package
         run: |
-          zip -r deploy.zip Dockerfile build/ public/ -x "*.git*"
+          zip -r deploy.zip Dockerfile build/ .ebextensions/ -x "*.git*"
 
       - name: Get timestamp
         id: timestamp
