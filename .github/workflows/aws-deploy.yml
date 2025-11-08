@@ -36,7 +36,7 @@ jobs:
 
       - name: Generate deployment package
         run: |
-          zip -r deploy.zip . -x "*.git*" "node_modules/*" ".elasticbeanstalk/*"
+          zip -r deploy.zip Dockerfile build/ public/ -x "*.git*"
 
       - name: Get timestamp
         id: timestamp
