@@ -37,21 +37,12 @@ jobs:
           mkdir eb-package
           cp -r build eb-package/
           
-          # Create Procfile for EB (tells it how to run the app)
-          echo "web: npx serve -s build -l 8080" > eb-package/Procfile
-          
-          # Create package.json with serve dependency
-          cat > eb-package/package.json << 'EOF'
-          {
-            "name": "docker-react-eb",
-            "version": "1.0.0",
-            "scripts": {
-              "start": "serve -s build -p 8080"
-            },
-            "dependencies": {
-              "serve": "^14.2.0"
-            }
-          }
+          # Create simple Dockerfile for serving static files
+          cat > eb-package/Dockerfile << 'EOF'
+          FROM nginx:alpine
+          COPY build /usr/share/nginx/html
+          EXPOSE 80
+          CMD ["nginx", "-g", "daemon off;"]
           EOF
           
           # Zip it up
