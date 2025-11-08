@@ -1,4 +1,4 @@
-name: Deploy to AWS Elastic Beanstalk (Testing)
+name: Deploy to AWS Elastic Beanstalk
 
 # Triggers on push to master AND allows manual trigger
 on:
@@ -29,6 +29,8 @@ jobs:
           npm install ajv@^8.0.0 --legacy-peer-deps
 
       - name: Build application
+        env:
+          PUBLIC_URL: /
         run: npm run build
 
       - name: Create deployment package
