@@ -1,8 +1,11 @@
 name: Deploy to AWS Elastic Beanstalk (Testing)
 
-# Manual trigger only - for testing EB deployment
+# Triggers on push to master AND allows manual trigger
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - master
+  workflow_dispatch:  # Also allows manual trigger from Actions tab
 
 permissions:
   contents: read
