@@ -1,18 +1,17 @@
 name: Deploy to AWS Elastic Beanstalk
 
-# This workflow deploys to AWS on push to master branch
-# Triggers when you merge dev → master (same as GitHub Pages)
+# Triggers on push to master AND allows manual trigger
 on:
   push:
     branches:
       - master
-  workflow_dispatch:  # Allows manual trigger from Actions tab
+  workflow_dispatch:  # Also allows manual trigger from Actions tab
 
 permissions:
   contents: read
 
 jobs:
-  deploy-aws:
+  deploy-eb:
     runs-on: ubuntu-latest
     
     steps:
@@ -25,24 +24,39 @@ jobs:
           node-version: '18'
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: |
+          npm install --legacy-peer-deps
+          npm install ajv@^8.0.0 --legacy-peer-deps
 
       - name: Build application
+        env:
+          PUBLIC_URL: /
         run: npm run build
 
-      - name: Prepare AWS Dockerfile
+      - name: Create deployment package
         run: |
-          cp Dockerfile.aws Dockerfile
-
-      - name: Generate deployment package
-        run: |
-          zip -r deploy.zip Dockerfile build/ .ebextensions/ -x "*.git*"
+          # Create a simple directory structure for EB
+          mkdir eb-package
+          cp -r build eb-package/
+          
+          # Create simple Dockerfile for serving static files
+          cat > eb-package/Dockerfile << 'EOF'
+          FROM nginx:alpine
+          COPY build /usr/share/nginx/html
+          EXPOSE 80
+          CMD ["nginx", "-g", "daemon off;"]
+          EOF
+          
+          # Zip it up
+          cd eb-package
+          zip -r ../deploy.zip .
+          cd ..
 
       - name: Get timestamp
         id: timestamp
         run: echo "time=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_OUTPUT
 
-      - name: Deploy to AWS Elastic Beanstalk
+      - name: Deploy to EB
         uses: einaregilsson/beanstalk-deploy@v22
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -50,20 +64,19 @@ jobs:
           application_name: ${{ secrets.EB_APPLICATION_NAME }}
           environment_name: ${{ secrets.EB_ENVIRONMENT_NAME }}
           region: ${{ secrets.AWS_REGION }}
-          version_label: "docker-react-${{ steps.timestamp.outputs.time }}"
+          version_label: "react-${{ steps.timestamp.outputs.time }}"
           deployment_package: deploy.zip
           wait_for_deployment: true
-          wait_for_environment_recovery: 600
-          max_backoff_retries: 20
+          wait_for_environment_recovery: 300
 
       - name: Deployment Success
         if: success()
         run: |
-          echo "✅ Deployment to AWS Elastic Beanstalk successful!"
-          echo "🌐 Application URL: http://${{ secrets.EB_ENVIRONMENT_NAME }}.${{ secrets.AWS_REGION }}.elasticbeanstalk.com"
+          echo "✅ EB Deployment successful!"
+          echo "🌐 Check your EB environment in AWS Console"
 
       - name: Deployment Failed
         if: failure()
         run: |
-          echo "❌ Deployment failed. Please check the logs above."
+          echo "❌ EB Deployment failed"
           exit 1
